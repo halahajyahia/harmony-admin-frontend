@@ -1,6 +1,6 @@
 import { getAdminAccessToken } from "@/utils/getAdminAccessToken";
-
 const API_BASE = `${import.meta.env.VITE_API_BASE_URL}/api/admin/events`;
+
 async function authHeaders(isJson = false) {
   const token = await getAdminAccessToken();
 

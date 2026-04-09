@@ -23,6 +23,7 @@ import ParticipantsModal from "@/components/admin/ParticipantsModal.vue";
 import EditParticipantModal from "@/components/admin/EditParticipantModal.vue";
 import DeleteParticipantConfirmModal from "@/components/admin/DeleteParticipantConfirmModal.vue";
 import ParticipantsDataFileSection from "@/components/admin/ParticipantsDataFileSection.vue";
+import EventQrModal from "@/components/admin/EventQrModal.vue";  
 
 const router = useRouter()
 const route = useRoute();
@@ -106,6 +107,7 @@ const showParticipantRecalcModal = ref(false);
 const participantRecalcMode = ref(""); // "created" | "updated"
 const participantToRecalculate = ref(null);
 const isRecalculatingParticipant = ref(false);
+const showQrModal = ref(false);
 
 async function deleteEvent() {
   try {
@@ -552,7 +554,6 @@ function showPageNotice(type, message) {
 function clearPageNotice() {
   pageNotice.value = { type: "", message: "" };
 }
-/*נשנה לזה אחרי חיבור הקוד עם הרוט שבנו ריאן ו מרים*/
 async function calculateMatchesForEvent() {
   try {
     clearPageNotice();
@@ -676,6 +677,9 @@ async function handleParticipantRecalculation() {
 
                 <button class="delete-btn" @click="showDeleteConfirm = true">
                   Delete
+                </button>
+                <button class="save-btn" @click="showQrModal = true">
+                  Create QR Code
                 </button>
               </template>
 
@@ -944,6 +948,11 @@ async function handleParticipantRecalculation() {
   :isDeletingParticipant="isDeletingParticipant"
   @close="closeDeleteParticipantConfirm"
   @confirm="deleteParticipant"
+/>
+<EventQrModal
+  :show="showQrModal"
+  :event="event"
+  @close="showQrModal = false"
 />
     </div>
   </AdminLayout>

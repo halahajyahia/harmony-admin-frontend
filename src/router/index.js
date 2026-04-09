@@ -48,11 +48,7 @@ const router = createRouter({
   path: "/auth/microsoft/callback",
   component: AdminMicrosoftCallbackView
 },
-{
-  path: "/admin/events/:id",
-  name: "admin-event-details",
-  component: AdminEventDetailsView,
-}
+
     
   ],
 })

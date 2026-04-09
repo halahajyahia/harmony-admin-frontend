@@ -43,6 +43,10 @@ const emit = defineEmits([
       <p><strong>Total rows:</strong> {{ event.participantsImport?.totalRows ?? 0 }}</p>
       <p><strong>Processed rows:</strong> {{ event.participantsImport?.processedRows ?? 0 }}</p>
       <p><strong>Failed rows:</strong> {{ event.participantsImport?.failedRows ?? 0 }}</p>
+       <p>
+        <strong>Matching status:</strong>
+        {{ event?.matchingStatus || "pending" }}
+      </p>
     </div>
 
     <div v-else class="participants-file-empty">
@@ -115,12 +119,10 @@ const emit = defineEmits([
               : "Calculate Matches"
           }}
         </button>
+
     </div>
   </section>
-      <p>
-        <strong>Matching status:</strong>
-        {{ event?.matchingStatus || "pending" }}
-      </p>
+     
 </template>
 
 <style scoped>
