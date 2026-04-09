@@ -34,7 +34,12 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     // Default entry point: redirect root access to login
+    {
+  path: "/",
+  redirect: "/admin/login",
+},
     // Admin routes
+
 { path: '/admin', redirect: '/admin/login' },
 { path: '/admin/login', component: AdminLoginView },
 
