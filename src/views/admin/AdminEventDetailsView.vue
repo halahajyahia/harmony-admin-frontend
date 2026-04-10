@@ -958,6 +958,7 @@ async function handleParticipantRecalculation() {
   </AdminLayout>
 </template>
 
+
 <style scoped>
 .event-details-page h1 {
   margin: 0;

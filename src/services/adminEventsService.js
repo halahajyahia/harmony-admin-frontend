@@ -175,7 +175,7 @@ export async function calculateMatchesForEvent(eventId) {
   const token = await getAdminAccessToken();
 
   const res = await fetch(
-`${import.meta.env.VITE_API_BASE_URL}/api/match/rebuild-all/${eventId}`
+`${import.meta.env.VITE_API_BASE_URL}/api/match/admin/rebuild-all/${eventId}`
     , {
       method: "POST",
       headers: {
@@ -196,7 +196,7 @@ export async function recalculateAddedParticipantMatches(eventId, participantId)
   const token = await getAdminAccessToken();
 
   const res = await fetch(
-`${import.meta.env.VITE_API_BASE_URL}/api/match/add/${eventId}/${participantId}`
+`${import.meta.env.VITE_API_BASE_URL}/api/match/admin/add/${eventId}/${participantId}`
     , {
       method: "POST",
       headers: {
@@ -220,7 +220,7 @@ export async function recalculateUpdatedParticipantMatches(eventId, participantI
   const token = await getAdminAccessToken();
 
   const res = await fetch(
-    `${import.meta.env.VITE_API_BASE_URL}/api/match/update/${eventId}/${participantId}`,
+    `${import.meta.env.VITE_API_BASE_URL}/api/match/admin/update/${eventId}/${participantId}`,
     {
       method: "POST",
       headers: {
