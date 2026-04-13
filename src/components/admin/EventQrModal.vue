@@ -14,7 +14,7 @@ const baseUrl = import.meta.env.VITE_PARTICIPANT_APP_BASE_URL;
 
 const eventLink = computed(() => {
   if (!props.event?.id) return "";
-  return `${baseUrl}/${props.event.id}/login`;
+  return `${baseUrl}/event/${props.event.id}/login`;
 });
 
 watch(
