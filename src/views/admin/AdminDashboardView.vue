@@ -21,6 +21,15 @@
         <button class="export-btn" @click="exportDashboardReport">
     Export PDF
   </button>
+  <div class="dashboard-live-row">
+<span class="live-badge" :class="{ offline: !isLive, pulse: livePulse }">
+  {{ isLive ? "● Live updates" : "● Paused" }}
+  </span>
+
+  <span class="last-updated">
+    Last updated: {{ formattedLastUpdated }}
+  </span>
+</div>
       </div>
 
 <div class="dashboard-content" ref="exportSection">
@@ -249,7 +258,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick } from "vue";
+import { ref, onMounted, onUnmounted, computed, nextTick } from "vue";
 import AdminLayout from "@/components/admin/AdminLayout.vue";
 import { getAdminAccessToken } from "@/utils/getAdminAccessToken";
 import jsPDF from "jspdf";
@@ -1056,8 +1065,42 @@ const eventTotalSkipped = computed(() => {
     0
   );
 });
-onMounted(() => {
-  loadEvents();
+const isLive = ref(true);
+const lastUpdatedAt = ref(null);
+const livePulse = ref(false);
+let dashboardInterval = null;
+async function refreshDashboardData() {
+  await loadEvents();
+  lastUpdatedAt.value = new Date();
+
+  livePulse.value = true;
+  setTimeout(() => {
+    livePulse.value = false;
+  }, 700);
+}
+const formattedLastUpdated = computed(() => {
+  if (!lastUpdatedAt.value) return "Not updated yet";
+
+  return lastUpdatedAt.value.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+});
+onMounted(async () => {
+  await refreshDashboardData();
+
+  dashboardInterval = setInterval(async () => {
+    if (document.visibilityState === "visible") {
+      await refreshDashboardData();
+    }
+  }, 5000);
+});
+
+onUnmounted(() => {
+  if (dashboardInterval) {
+    clearInterval(dashboardInterval);
+  }
 });
 
 
@@ -1466,5 +1509,47 @@ onMounted(() => {
   height: 1px;
   background: #e7ece8;
   margin: 4px 0 2px;
+}
+
+.dashboard-live-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 10px 0 18px;
+  flex-wrap: wrap;
+}
+
+.live-badge {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2f8f5b;
+}
+
+.live-badge.offline {
+  color: #b38f00;
+}
+
+.last-updated {
+  font-size: 13px;
+  color: #6b7a71;
+}
+
+.live-badge.pulse {
+  animation: livePulseAnim 0.7s ease;
+}
+
+@keyframes livePulseAnim {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>
