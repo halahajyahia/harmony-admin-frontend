@@ -31,35 +31,64 @@ const newEvent = ref({
 onMounted(() => {
   loadEvents();
 });
+const createEventError = ref("");
+
+const isCreatingEvent = ref(false);
+
 async function createEvent() {
-  const token = await getAdminAccessToken();
+  createEventError.value = "";
 
-  const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/events`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(newEvent.value),
-  });
+  if (!newEvent.value.name?.trim()) {
+    createEventError.value = "Event name is required";
+    return;
+  }
 
-  const data = await res.json();
-  console.log("status:", res.status);
-  console.log("data:", data);
+  if (!newEvent.value.date?.trim()) {
+    createEventError.value = "Event date is required";
+    return;
+  }
 
+  try {
+    isCreatingEvent.value = true;
 
-  // reset form
-  await loadEvents();
+    const token = await getAdminAccessToken();
 
-  newEvent.value = {
-  name: "",
-  date: "",
-  location: "",
-  description: "",
-  supportedLanguages: [],
-};
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/admin/events`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(newEvent.value),
+    });
 
-  isCreateModalOpen.value = false;
+    const data = await res.json();
+
+    console.log("status:", res.status);
+    console.log("data:", data);
+
+    if (!res.ok) {
+      createEventError.value = data.error || "Failed to create event";
+      return;
+    }
+
+    await loadEvents();
+
+    newEvent.value = {
+      name: "",
+      date: "",
+      location: "",
+      description: "",
+      supportedLanguages: [],
+    };
+
+    isCreateModalOpen.value = false;
+  } catch (error) {
+    console.error("Create event failed:", error);
+    createEventError.value = "Failed to create event";
+  } finally {
+    isCreatingEvent.value = false;
+  }
 }
 async function loadEvents() {
   try {
@@ -286,12 +315,15 @@ function openEventDetails(event) {
 
   </div>
 </div>
+<p v-if="createEventError" class="error-message">
+  {{ createEventError }}
+</p>
         <div class="modal-actions">
           <button class="cancel-btn" @click="isCreateModalOpen = false">
             Cancel
           </button>
-          <button class="save-btn" @click="createEvent">
-            Create Event
+          <button class="save-btn" @click="createEvent" :disabled="isCreatingEvent">
+            {{ isCreatingEvent ? "Creating..." : "Create Event" }}
           </button>
         </div>
       </div>

@@ -585,14 +585,32 @@ y = 40;
     y += 10;
     addMetricLine(pdf, "Arrival Rate", `${averageOnlineRate.value}%`, y);
 
-    y += 8;
-    addMetricLine(pdf, "Saved Rate", `${averageSavedRate.value}%`, y);
+y += 8;
+addMetricLine(pdf, "Active Users", `${activeUsersRate.value}%`, y);
 
-    y += 8;
-    addMetricLine(pdf, "Met Rate", `${averageMetRate.value}%`, y);
+y += 8;
+addMetricLine(
+  pdf,
+  "Avg Saved per Active Online User",
+  averageSavedPerActiveOnlineUser.value,
+  y
+);
 
-    y += 8;
-    addMetricLine(pdf, "Skipped Rate", `${averageSkippedRate.value}%`, y);
+y += 8;
+addMetricLine(
+  pdf,
+  "Avg Met per Active Online User",
+  averageMetPerActiveOnlineUser.value,
+  y
+);
+
+y += 8;
+addMetricLine(
+  pdf,
+  "Avg Skipped per Active Online User",
+  averageSkippedPerActiveOnlineUser.value,
+  y
+);
        pdf.setDrawColor(225, 230, 226);
     pdf.line(20, y + 4, 190, y + 4);
     y += 10;
@@ -630,15 +648,53 @@ y = 40;
       (sum, p) => sum + (p.interactions?.skipped?.length || 0),
       0
     );
+// Active Users
+const onlineParticipants = participants.filter((p) => p.isOnline);
 
-    const savedRate =
-      participantCount > 0 ? Math.round((savedCount / participantCount) * 100) : 0;
+const activeUsers = onlineParticipants.filter((p) => {
+  const i = p.interactions || {};
+  return (
+    (i.saved?.length || 0) > 0 ||
+    (i.met?.length || 0) > 0 ||
+    (i.skipped?.length || 0) > 0
+  );
+});
 
-    const metRate =
-      participantCount > 0 ? Math.round((metCount / participantCount) * 100) : 0;
+const activeUsersRate =
+  onlineParticipants.length > 0
+    ? Math.round((activeUsers.length / onlineParticipants.length) * 100)
+    : 0;
 
-    const skippedRate =
-      participantCount > 0 ? Math.round((skippedCount / participantCount) * 100) : 0;
+// Avg per active online user
+const avgSaved =
+  activeUsers.length > 0
+    ? Math.ceil(
+        activeUsers.reduce(
+          (sum, p) => sum + (p.interactions?.saved?.length || 0),
+          0
+        ) / activeUsers.filter(p => (p.interactions?.saved?.length || 0) > 0).length
+      )
+    : 0;
+
+const avgMet =
+  activeUsers.length > 0
+    ? Math.ceil(
+        activeUsers.reduce(
+          (sum, p) => sum + (p.interactions?.met?.length || 0),
+          0
+        ) / activeUsers.filter(p => (p.interactions?.met?.length || 0) > 0).length
+      )
+    : 0;
+
+const avgSkipped =
+  activeUsers.length > 0
+    ? Math.ceil(
+        activeUsers.reduce(
+          (sum, p) => sum + (p.interactions?.skipped?.length || 0),
+          0
+        ) / activeUsers.filter(p => (p.interactions?.skipped?.length || 0) > 0).length
+      )
+    : 0;
 
     addSectionTitle(pdf, "Event Information", y);
 
@@ -674,16 +730,18 @@ y = 40;
     pdf.line(20, y + 4, 190, y + 4);
     y += 10;
     addSectionTitle(pdf, "Engagement Analytics", y);
+addMetricLine(pdf, "Active Users", `${activeUsersRate}%`, y);
 
-    y += 10;
-    addMetricLine(pdf, "Saved Rate", `${savedRate}%`, y);
+y += 8;
+addMetricLine(pdf, "Avg Saved per Active Online User", avgSaved, y);
 
-    y += 8;
-    addMetricLine(pdf, "Met Rate", `${metRate}%`, y);
+y += 8;
+addMetricLine(pdf, "Avg Met per Active Online User", avgMet, y);
 
-    y += 8;
-    addMetricLine(pdf, "Skipped Rate", `${skippedRate}%`, y);
-
+y += 8;
+addMetricLine(pdf, "Avg Skipped per Active Online User", avgSkipped, y);
+y += 10;
+addSectionTitle(pdf, "Interaction Totals", y);
     y += 8;
     addMetricLine(pdf, "Total Saved Interactions", savedCount, y);
 
@@ -830,75 +888,7 @@ const averageOnlineRate = computed(() => {
 
   return Math.round((totalRate / countedEvents) * 100);
 });
-const averageSavedRate = computed(() => {
-  let totalRate = 0;
-  let countedEvents = 0;
 
-  for (const eventId in allParticipantsByEvent.value) {
-    const participants = allParticipantsByEvent.value[eventId] || [];
-
-    if (participants.length === 0) continue;
-
-    const totalSaved = participants.reduce(
-      (sum, participant) => sum + (participant.interactions?.saved?.length || 0),
-      0
-    );
-
-    const rate = totalSaved / participants.length;
-    totalRate += rate;
-    countedEvents++;
-  }
-
-  if (countedEvents === 0) return 0;
-
-  return Math.round((totalRate / countedEvents) * 100);
-});
-const averageMetRate = computed(() => {
-  let totalRate = 0;
-  let countedEvents = 0;
-
-  for (const eventId in allParticipantsByEvent.value) {
-    const participants = allParticipantsByEvent.value[eventId] || [];
-
-    if (participants.length === 0) continue;
-
-    const totalMet = participants.reduce(
-      (sum, participant) => sum + (participant.interactions?.met?.length || 0),
-      0
-    );
-
-    const rate = totalMet / participants.length;
-    totalRate += rate;
-    countedEvents++;
-  }
-
-  if (countedEvents === 0) return 0;
-
-  return Math.round((totalRate / countedEvents) * 100);
-});
-const averageSkippedRate = computed(() => {
-  let totalRate = 0;
-  let countedEvents = 0;
-
-  for (const eventId in allParticipantsByEvent.value) {
-    const participants = allParticipantsByEvent.value[eventId] || [];
-
-    if (participants.length === 0) continue;
-
-    const totalSkipped = participants.reduce(
-      (sum, participant) => sum + (participant.interactions?.skipped?.length || 0),
-      0
-    );
-
-    const rate = totalSkipped / participants.length;
-    totalRate += rate;
-    countedEvents++;
-  }
-
-  if (countedEvents === 0) return 0;
-
-  return Math.round((totalRate / countedEvents) * 100);
-});
 const averageSavedPerActiveOnlineUser = computed(() => {
   let totalEventAverages = 0;
   let countedEvents = 0;

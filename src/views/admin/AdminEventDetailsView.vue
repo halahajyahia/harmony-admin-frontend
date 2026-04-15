@@ -24,6 +24,7 @@ import EditParticipantModal from "@/components/admin/EditParticipantModal.vue";
 import DeleteParticipantConfirmModal from "@/components/admin/DeleteParticipantConfirmModal.vue";
 import ParticipantsDataFileSection from "@/components/admin/ParticipantsDataFileSection.vue";
 import EventQrModal from "@/components/admin/EventQrModal.vue";  
+import { QrCode } from "lucide-vue-next";
 
 const router = useRouter()
 const route = useRoute();
@@ -108,7 +109,7 @@ const participantRecalcMode = ref(""); // "created" | "updated"
 const participantToRecalculate = ref(null);
 const isRecalculatingParticipant = ref(false);
 const showQrModal = ref(false);
-
+const isProcessingParticipantsFile = ref(false);
 async function deleteEvent() {
   try {
     clearPageNotice();
@@ -281,6 +282,18 @@ async function processParticipantsFile() {
   clearPageNotice();
 
   try {
+    isProcessingParticipantsFile.value = true;
+
+    if (event.value) {
+      event.value = {
+        ...event.value,
+        participantsImport: {
+          ...(event.value.participantsImport || {}),
+          status: "processing",
+        },
+      };
+    }
+
     const data = await processParticipantsFileApi(event.value.id);
 
     event.value = data.event;
@@ -293,6 +306,8 @@ async function processParticipantsFile() {
   } catch (error) {
     console.error(error);
     showPageNotice("error", error.message || "Process failed");
+  } finally {
+    isProcessingParticipantsFile.value = false;
   }
 }
 async function loadParticipants() {
@@ -671,17 +686,30 @@ async function handleParticipantRecalculation() {
 
             <div class="card-actions">
               <template v-if="!isEditing">
-                <button class="edit-btn" @click="isEditing = true">
-                  Edit
-                </button>
+  <button
+    class="icon-action-btn"
+    title="Edit event"
+    @click="isEditing = true"
+  >
+    ✎
+  </button>
 
-                <button class="delete-btn" @click="showDeleteConfirm = true">
-                  Delete
-                </button>
-                <button class="save-btn" @click="showQrModal = true">
-                  Create QR Code
-                </button>
-              </template>
+  <button
+  class="icon-action-btn"
+  title="Create QR code"
+  @click="showQrModal = true"
+>
+  <QrCode :size="18" />
+</button>
+
+  <button
+    class="icon-action-btn danger"
+    title="Delete event"
+    @click="showDeleteConfirm = true"
+  >
+    🗑
+  </button>
+</template>
 
               <template v-else>
                 <button class="save-btn" @click="updateEvent">
@@ -809,6 +837,7 @@ async function handleParticipantRecalculation() {
   :participantsLoading="participantsLoading"
   :isUploadingParticipantsFile="isUploadingParticipantsFile"
   :isDeletingParticipantsFile="isDeletingParticipantsFile"
+  :isProcessingParticipantsFile="isProcessingParticipantsFile"
   :formatDateTime="formatDateTime"
   :formatFileSize="formatFileSize"
   @process-file="processParticipantsFile"
@@ -816,7 +845,7 @@ async function handleParticipantRecalculation() {
   @view-participants="showParticipantsModal = true"
   @trigger-upload="triggerParticipantsFileUpload"
   :matchingLoading="isCalculatingMatches"
-@calculate-matches="calculateMatchesForEvent"
+  @calculate-matches="calculateMatchesForEvent"
 />
         <section class="event-secondary-card">
           <h3>Event Analytics</h3>
@@ -984,6 +1013,7 @@ async function handleParticipantRecalculation() {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+  align-items: center;
 }
 .details-grid {
   display: grid;
@@ -1237,5 +1267,51 @@ button:disabled {
   color: #991b1b;
   border: 1px solid #fecaca;
 }
+.icon-action-btn {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 12px;
+  background: #eef4f0;
+  color: #234532;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s ease;
+}
 
+.icon-action-btn:hover {
+  background: #e1ece5;
+  transform: translateY(-1px);
+}
+
+.icon-action-btn.qr {
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+.icon-action-btn.danger {
+  background: #fde8e8;
+  color: #991b1b;
+}
+
+.icon-action-btn.danger:hover {
+  background: #f8d7d7;
+}
+
+.icon-action-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.icon-action-btn:hover svg {
+  transform: scale(1.1);
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
 </style>
