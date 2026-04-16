@@ -1,272 +1,16 @@
-<template>
-  <AdminLayout>
-    <div class="dashboard-container">
-      <h1>Dashboard</h1>
-      <p class="dashboard-subtitle">
-        View overall admin statistics or inspect a specific event.
-      </p>
-
-      <div class="top-bar">
-        <select v-model="selectedEventId" class="event-select">
-          <option value="all">All Events</option>
-
-          <option
-            v-for="event in events"
-            :key="event.id"
-            :value="event.id"
-          >
-            {{ event.name }}
-          </option>
-        </select>
-        <button class="export-btn" @click="exportDashboardReport">
-    Export PDF
-  </button>
-  <div class="dashboard-live-row">
-<span class="live-badge" :class="{ offline: !isLive, pulse: livePulse }">
-  {{ isLive ? "● Live updates" : "● Paused" }}
-  </span>
-
-  <span class="last-updated">
-    Last updated: {{ formattedLastUpdated }}
-  </span>
-</div>
-      </div>
-
-<div class="dashboard-content" ref="exportSection">
-<div v-if="selectedEventId === 'all'" class="dashboard-section">
-  <div class="kpi-grid">
-    <div class="kpi-card">
-      <p class="kpi-label">Total Participants</p>
-      <h2 class="kpi-value">{{ totalParticipants }}</h2>
-    </div>
-
-    <div class="kpi-card">
-      <p class="kpi-label">Unique Participants</p>
-      <h2 class="kpi-value">{{ uniqueParticipantsCount }}</h2>
-    </div>
-
-    <div class="kpi-card">
-      <p class="kpi-label">Average Per Active Event</p>
-      <h2 class="kpi-value">{{ averageParticipantsPerActiveEvent }}</h2>
-    </div>
-
-    <div class="kpi-card">
-      <p class="kpi-label">Events With Participants</p>
-      <h2 class="kpi-value">{{ eventsWithParticipants }}</h2>
-    </div>
-<div class="kpi-card">
-  <p class="kpi-sub">Total Events</p>
-
-  <h2 class="kpi-value">{{ totalEvents }}</h2>
-
-  <div class="status-row">
-    <span class="status draft">Draft {{ draftEvents }}</span>
-    <span class="status published">Published {{ publishedEvents }}</span>
-    <span class="status archived">Archived {{ archivedEvents }}</span>
-  </div>
-</div>
-    <div class="kpi-card circle-kpi-card">
-      <p class="kpi-label">Arrival Rate</p>
-
-      <div
-        class="progress-circle"
-        :style="{
-          background: `conic-gradient(#2f8f5b ${averageOnlineRate}%, #eef2ef 0%)`
-        }"
-      >
-        <div class="progress-circle-inner">
-          {{ averageOnlineRate }}%
-        </div>
-      </div>
-    </div>
-<div class="kpi-card engagement-card">
-  <p class="kpi-label">Engagement Breakdown</p>
-
- <div class="engagement-item">
-  <div class="engagement-head">
-    <span>Saved</span>
-    <strong>{{ averageSavedPerActiveOnlineUser }}</strong>
-  </div>
-  <div class="rate-bar">
-    <div
-      class="rate-fill saved"
-      :style="{ width: `${Math.min(averageSavedPerActiveOnlineUser * 20, 100)}%` }"
-    ></div>
-  </div>
-</div>
-
-<div class="engagement-item">
-  <div class="engagement-head">
-    <span>Met</span>
-    <strong>{{ averageMetPerActiveOnlineUser }}</strong>
-  </div>
-  <div class="rate-bar">
-    <div
-      class="rate-fill met"
-      :style="{ width: `${Math.min(averageMetPerActiveOnlineUser * 20, 100)}%` }"
-    ></div>
-  </div>
-</div>
-
-<div class="engagement-item">
-  <div class="engagement-head">
-    <span>Skipped</span>
-    <strong>{{ averageSkippedPerActiveOnlineUser }}</strong>
-  </div>
-  <div class="rate-bar">
-    <div
-      class="rate-fill skipped"
-      :style="{ width: `${Math.min(averageSkippedPerActiveOnlineUser * 20, 100)}%` }"
-    ></div>
-  </div>
-</div>
-</div>
-<div class="kpi-card">
-  <p class="kpi-label">Active Users</p>
-  <h2 class="kpi-value">{{ activeUsersRate }}%</h2>
-
-  <div class="rate-bar">
-    <div
-      class="rate-fill online"
-      :style="{ width: `${activeUsersRate}%` }"
-    ></div>
-  </div>
-</div>
-  </div>
-        </div>
-               
-
-<div v-if="selectedEventId !== 'all'" class="dashboard-section">
-<div class="event-hero-card">
-  <div class="event-hero-text">
-    <p class="event-hero-eyebrow">Event Dashboard</p>
-    <h2 class="event-hero-title">{{ selectedEvent?.name }}</h2>
-    <p class="event-hero-subtitle">Event Analytics Overview</p>
-  </div>
-
-  <span
-    class="event-status-pill"
-    :class="selectedEvent?.status"
-  >
-    {{ selectedEvent?.status }}
-  </span>
-</div>
-  <div class="kpi-grid">
-  <div class="kpi-card">
-    <p class="kpi-label">Participants</p>
-    <h2 class="kpi-value">{{ eventTotalParticipants }}</h2>
-  </div>
-
-  <div class="kpi-card">
-    <p class="kpi-label">Unique</p>
-    <h2 class="kpi-value">{{ eventUniqueParticipants }}</h2>
-  </div>
-
-  <div class="kpi-card">
-    <p class="kpi-label">Online</p>
-    <h2 class="kpi-value">{{ eventOnlineParticipants }}</h2>
-  </div>
-
-  <div class="kpi-card circle-kpi-card">
-    <p class="kpi-label">Arrival Rate</p>
-
-    <div
-      class="progress-circle"
-      :style="{
-        background: `conic-gradient(#2f8f5b ${eventArrivalRate}%, #eef2ef 0%)`
-      }"
-    >
-      <div class="progress-circle-inner">
-        {{ eventArrivalRate }}%
-      </div>
-    </div>
-  </div>
-
-
-
-  <div class="kpi-card">
-    <p class="kpi-label">Active Users</p>
-    <h2 class="kpi-value">{{ eventActiveUsersRate }}%</h2>
-
-    <div class="rate-bar">
-      <div
-        class="rate-fill online"
-        :style="{ width: `${eventActiveUsersRate}%` }"
-      ></div>
-    </div>
-  </div>
-
-  <div class="kpi-card engagement-card">
-  <p class="kpi-label">Engagement Breakdown</p>
-
-  <p class="engagement-section-title">Average per active online user</p>
-
-  <div class="engagement-item">
-    <div class="engagement-head">
-      <span>Saved</span>
-      <strong>{{ eventAvgSaved }}</strong>
-    </div>
-    <div class="rate-bar">
-      <div
-        class="rate-fill saved"
-        :style="{ width: `${Math.min(eventAvgSaved * 20, 100)}%` }"
-      ></div>
-    </div>
-  </div>
-
-  <div class="engagement-item">
-    <div class="engagement-head">
-      <span>Met</span>
-      <strong>{{ eventAvgMet }}</strong>
-    </div>
-    <div class="rate-bar">
-      <div
-        class="rate-fill met"
-        :style="{ width: `${Math.min(eventAvgMet * 20, 100)}%` }"
-      ></div>
-    </div>
-  </div>
-
-  <div class="engagement-item">
-    <div class="engagement-head">
-      <span>Skipped</span>
-      <strong>{{ eventAvgSkipped }}</strong>
-    </div>
-    <div class="rate-bar">
-      <div
-        class="rate-fill skipped"
-        :style="{ width: `${Math.min(eventAvgSkipped * 20, 100)}%` }"
-      ></div>
-    </div>
-  </div>
-
-  <div class="engagement-divider"></div>
-
-  <p class="engagement-section-title">Total interactions</p>
-
-  <div class="engagement-totals">
-    <span class="engagement-total-pill saved-pill">Saved {{ eventTotalSaved }}</span>
-    <span class="engagement-total-pill met-pill">Met {{ eventTotalMet }}</span>
-    <span class="engagement-total-pill skipped-pill">Skipped {{ eventTotalSkipped }}</span>
-  </div>
-</div>
-</div>
-</div>
-      </div>
-    </div>
-  </AdminLayout>
-</template>
-
 <script setup>
-import { ref, onMounted, onUnmounted, computed, nextTick } from "vue";
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from "vue";
 import AdminLayout from "@/components/admin/AdminLayout.vue";
 import { getAdminAccessToken } from "@/utils/getAdminAccessToken";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-
+import EventAnalyticsSection from "@/components/admin/EventAnalyticsSection.vue";
+import { getEventAnalytics as getEventAnalyticsApi } from "@/services/adminEventsService";
 
 const events = ref([]);
 const selectedEventId = ref("all");
+const selectedEventAnalytics = ref(null);
+const selectedEventAnalyticsLoading = ref(true);
 const totalEvents = computed(() => events.value.length);
 const exportSection = ref(null);
 const publishedEvents = computed(
@@ -282,72 +26,14 @@ const draftEvents = computed(
 );
 const participantCountsByEvent = ref({});
 const allParticipantsByEvent = ref({});
-const selectedEventParticipants = computed(() => {
-  if (selectedEventId.value === "all") return [];
 
-  return allParticipantsByEvent.value[selectedEventId.value] || [];
-});
-const eventTotalParticipants = computed(() => {
-  return selectedEventParticipants.value.length;
-});
-const eventUniqueParticipants = computed(() => {
-  const phones = new Set(
-    selectedEventParticipants.value.map(p => p.phoneNumber).filter(Boolean)
-  );
 
-  return phones.size;
-});
-const eventOnlineParticipants = computed(() => {
-  return selectedEventParticipants.value.filter(p => p.isOnline).length;
-});
-const eventArrivalRate = computed(() => {
-  if (eventTotalParticipants.value === 0) return 0;
-
-  return Math.round(
-    (eventOnlineParticipants.value / eventTotalParticipants.value) * 100
-  );
-});
-const eventActiveUsersRate = computed(() => {
-  const online = selectedEventParticipants.value.filter(p => p.isOnline);
-
-  if (online.length === 0) return 0;
-
-  const active = online.filter(p => {
-    const i = p.interactions || {};
-    return (
-      (i.saved?.length || 0) > 0 ||
-      (i.met?.length || 0) > 0 ||
-      (i.skipped?.length || 0) > 0
-    );
-  });
-
-  return Math.round((active.length / online.length) * 100);
-});
-const eventAvgSaved = computed(() => {
-  const online = selectedEventParticipants.value.filter(p => p.isOnline);
-
-  const active = online.filter(p => (p.interactions?.saved?.length || 0) > 0);
-
-  if (active.length === 0) return 0;
-
-  const total = active.reduce(
-    (sum, p) => sum + (p.interactions?.saved?.length || 0),
-    0
-  );
-
-  return Math.ceil(total / active.length);
-});
-const eventTotalSaved = computed(() => {
-  return selectedEventParticipants.value.reduce(
-    (sum, p) => sum + (p.interactions?.saved?.length || 0),
-    0
-  );
-});
 const selectedEvent = computed(() => {
   return events.value.find(
     (event) => event.id === selectedEventId.value
   );
 });
+
 async function loadEvents() {
   try {
     const token = await getAdminAccessToken();
@@ -371,6 +57,7 @@ async function loadEvents() {
     console.error("Load dashboard events failed:", error);
   }
 }
+
 async function loadParticipantCounts() {
   try {
     const token = await getAdminAccessToken();
@@ -422,6 +109,7 @@ async function loadParticipantCounts() {
     console.error("Load participant counts failed:", error);
   }
 }
+
 async function exportDashboardToPDF() {
   try {
     await nextTick();
@@ -472,6 +160,7 @@ async function exportDashboardToPDF() {
     console.error("Export PDF failed:", error);
   }
 }
+
 function getSelectedEventName() {
   if (selectedEventId.value === "all") return "All Events";
 
@@ -621,81 +310,11 @@ addMetricLine(
 
     y += 34;
   } else {
-    const eventId = selectedEventId.value;
-    const selectedEvent = events.value.find((event) => event.id === eventId);
-    const participants = allParticipantsByEvent.value[eventId] || [];
+  const eventId = selectedEventId.value;
+  const selectedEvent = events.value.find((event) => event.id === eventId);
+  const analytics = selectedEventAnalytics.value;
 
-    const participantCount = participants.length;
-    const uniquePhones = new Set(
-      participants.map((p) => p.phoneNumber).filter(Boolean)
-    ).size;
-
-    const onlineCount = participants.filter((p) => p.isOnline).length;
-    const arrivalRate =
-      participantCount > 0 ? Math.round((onlineCount / participantCount) * 100) : 0;
-
-    const savedCount = participants.reduce(
-      (sum, p) => sum + (p.interactions?.saved?.length || 0),
-      0
-    );
-
-    const metCount = participants.reduce(
-      (sum, p) => sum + (p.interactions?.met?.length || 0),
-      0
-    );
-
-    const skippedCount = participants.reduce(
-      (sum, p) => sum + (p.interactions?.skipped?.length || 0),
-      0
-    );
-// Active Users
-const onlineParticipants = participants.filter((p) => p.isOnline);
-
-const activeUsers = onlineParticipants.filter((p) => {
-  const i = p.interactions || {};
-  return (
-    (i.saved?.length || 0) > 0 ||
-    (i.met?.length || 0) > 0 ||
-    (i.skipped?.length || 0) > 0
-  );
-});
-
-const activeUsersRate =
-  onlineParticipants.length > 0
-    ? Math.round((activeUsers.length / onlineParticipants.length) * 100)
-    : 0;
-
-// Avg per active online user
-const avgSaved =
-  activeUsers.length > 0
-    ? Math.ceil(
-        activeUsers.reduce(
-          (sum, p) => sum + (p.interactions?.saved?.length || 0),
-          0
-        ) / activeUsers.filter(p => (p.interactions?.saved?.length || 0) > 0).length
-      )
-    : 0;
-
-const avgMet =
-  activeUsers.length > 0
-    ? Math.ceil(
-        activeUsers.reduce(
-          (sum, p) => sum + (p.interactions?.met?.length || 0),
-          0
-        ) / activeUsers.filter(p => (p.interactions?.met?.length || 0) > 0).length
-      )
-    : 0;
-
-const avgSkipped =
-  activeUsers.length > 0
-    ? Math.ceil(
-        activeUsers.reduce(
-          (sum, p) => sum + (p.interactions?.skipped?.length || 0),
-          0
-        ) / activeUsers.filter(p => (p.interactions?.skipped?.length || 0) > 0).length
-      )
-    : 0;
-
+  if (!analytics) {
     addSectionTitle(pdf, "Event Information", y);
 
     y += 10;
@@ -708,58 +327,134 @@ const avgSkipped =
     addMetricLine(pdf, "Event Status", selectedEvent?.status || "N/A", y);
 
     y += 15;
-       pdf.setDrawColor(225, 230, 226);
+    addMetricLine(pdf, "Analytics", "No analytics available", y);
+  } else {
+    addSectionTitle(pdf, "Event Information", y);
+
+    y += 10;
+    addMetricLine(pdf, "Event Name", selectedEvent?.name || "N/A", y);
+
+    y += 8;
+    addMetricLine(pdf, "Event Date", selectedEvent?.date || "N/A", y);
+
+    y += 8;
+    addMetricLine(pdf, "Event Status", selectedEvent?.status || "N/A", y);
+
+    y += 15;
+    pdf.setDrawColor(225, 230, 226);
     pdf.line(20, y + 4, 190, y + 4);
     y += 10;
     addSectionTitle(pdf, "Participants Overview", y);
 
     y += 10;
-    addMetricLine(pdf, "Total Participants", participantCount, y);
+    addMetricLine(pdf, "Total Participants", analytics.totalParticipants, y);
 
     y += 8;
-    addMetricLine(pdf, "Unique Participants", uniquePhones, y);
+    addMetricLine(pdf, "Arrived Participants", analytics.arrivedParticipants, y);
 
     y += 8;
-    addMetricLine(pdf, "Online Participants", onlineCount, y);
-
-    y += 8;
-    addMetricLine(pdf, "Arrival Rate", `${arrivalRate}%`, y);
+    addMetricLine(pdf, "Arrival Rate", `${analytics.arrivalRate}%`, y);
 
     y += 15;
     pdf.setDrawColor(225, 230, 226);
     pdf.line(20, y + 4, 190, y + 4);
     y += 10;
     addSectionTitle(pdf, "Engagement Analytics", y);
-addMetricLine(pdf, "Active Users", `${activeUsersRate}%`, y);
 
-y += 8;
-addMetricLine(pdf, "Avg Saved per Active Online User", avgSaved, y);
-
-y += 8;
-addMetricLine(pdf, "Avg Met per Active Online User", avgMet, y);
-
-y += 8;
-addMetricLine(pdf, "Avg Skipped per Active Online User", avgSkipped, y);
-y += 10;
-addSectionTitle(pdf, "Interaction Totals", y);
-    y += 8;
-    addMetricLine(pdf, "Total Saved Interactions", savedCount, y);
+    y += 10;
+    addMetricLine(pdf, "Active Users", analytics.activeUsersCount, y);
 
     y += 8;
-    addMetricLine(pdf, "Total Met Interactions", metCount, y);
+    addMetricLine(
+      pdf,
+      "Active Users Rate",
+      `${analytics.activeUsersRate}%`,
+      y
+    );
 
     y += 8;
-    addMetricLine(pdf, "Total Skipped Interactions", skippedCount, y);
+    addMetricLine(
+      pdf,
+      "Avg Saved per Participant",
+      analytics.averages.savedPerParticipant,
+      y
+    );
+
+    y += 8;
+    addMetricLine(
+      pdf,
+      "Avg Met per Participant",
+      analytics.averages.metPerParticipant,
+      y
+    );
+
+    y += 8;
+    addMetricLine(
+      pdf,
+      "Avg Skipped per Participant",
+      analytics.averages.skippedPerParticipant,
+      y
+    );
+
+    y += 15;
     pdf.setDrawColor(225, 230, 226);
     pdf.line(20, y + 4, 190, y + 4);
     y += 10;
-    addSummaryBox(pdf, 20, y, 40, 24, "Participants", participantCount);
-    addSummaryBox(pdf, 65, y, 40, 24, "Unique", uniquePhones);
-    addSummaryBox(pdf, 110, y, 40, 24, "Online", onlineCount);
-    addSummaryBox(pdf, 155, y, 35, 24, "Arrival", `${arrivalRate}%`);
+    addSectionTitle(pdf, "Interaction Totals", y);
 
-y += 34;
+    y += 10;
+    addMetricLine(
+      pdf,
+      "Total Saved Interactions",
+      analytics.totals.saved,
+      y
+    );
+
+    y += 8;
+    addMetricLine(
+      pdf,
+      "Total Met Interactions",
+      analytics.totals.met,
+      y
+    );
+
+    y += 8;
+    addMetricLine(
+      pdf,
+      "Total Skipped Interactions",
+      analytics.totals.skipped,
+      y
+    );
+
+    y += 8;
+    addMetricLine(
+      pdf,
+      "Total Interactions",
+      analytics.totals.totalInteractions,
+      y
+    );
+
+    y += 8;
+    addMetricLine(
+      pdf,
+      "Avg Interactions per Participant",
+      analytics.averages.totalInteractionsPerParticipant,
+      y
+    );
+
+    y += 15;
+    pdf.setDrawColor(225, 230, 226);
+    pdf.line(20, y + 4, 190, y + 4);
+    y += 10;
+
+    addSummaryBox(pdf, 20, y, 40, 24, "Participants", analytics.totalParticipants);
+    addSummaryBox(pdf, 65, y, 40, 24, "Arrived", analytics.arrivedParticipants);
+    addSummaryBox(pdf, 110, y, 40, 24, "Active", analytics.activeUsersCount);
+    addSummaryBox(pdf, 155, y, 35, 24, "Arrival", `${analytics.arrivalRate}%`);
+
+    y += 34;
   }
+}
 
   const fileName =
     selectedEventId.value === "all"
@@ -799,10 +494,6 @@ const eventsWithParticipants = computed(() => {
   ).length;
 });
 
-const eventsWithoutParticipants = computed(() => {
-  return events.value.length - eventsWithParticipants.value;
-});
-
 const averageParticipantsPerActiveEvent = computed(() => {
   const activeCounts = Object.values(participantCountsByEvent.value).filter(
     (count) => count > 0
@@ -814,59 +505,6 @@ const averageParticipantsPerActiveEvent = computed(() => {
   return Math.round(total / activeCounts.length);
 });
 
-const totalOnline = computed(() => {
-  let count = 0;
-
-  for (const eventId in allParticipantsByEvent.value) {
-    const participants = allParticipantsByEvent.value[eventId] || [];
-
-    count += participants.filter((p) => p.isOnline).length;
-  }
-
-  return count;
-});
-const totalSaved = computed(() => {
-  let sum = 0;
-
-  for (const eventId in allParticipantsByEvent.value) {
-    const participants = allParticipantsByEvent.value[eventId] || [];
-
-    sum += participants.reduce(
-      (acc, p) => acc + (p.interactions?.saved?.length || 0),
-      0
-    );
-  }
-
-  return sum;
-});
-const totalmet= computed(() => {
-  let sum = 0;
-
-  for (const eventId in allParticipantsByEvent.value) {
-    const participants = allParticipantsByEvent.value[eventId] || [];
-
-    sum += participants.reduce(
-      (acc, p) => acc + (p.interactions?.met?.length || 0),
-      0
-    );
-  }
-
-  return sum;
-});
-const totalskipped = computed(() => {
-  let sum = 0;
-
-  for (const eventId in allParticipantsByEvent.value) {
-    const participants = allParticipantsByEvent.value[eventId] || [];
-
-    sum += participants.reduce(
-      (acc, p) => acc + (p.interactions?.skipped?.length || 0),
-      0
-    );
-  }
-
-  return sum;
-});
 const averageOnlineRate = computed(() => {
   let totalRate = 0;
   let countedEvents = 0;
@@ -919,6 +557,7 @@ const averageSavedPerActiveOnlineUser = computed(() => {
 
   return Math.ceil(totalEventAverages / countedEvents);
 });
+
 const averageMetPerActiveOnlineUser = computed(() => {
   let totalEventAverages = 0;
   let countedEvents = 0;
@@ -949,6 +588,7 @@ const averageMetPerActiveOnlineUser = computed(() => {
 
   return Math.ceil(totalEventAverages / countedEvents);
 });
+
 const averageSkippedPerActiveOnlineUser = computed(() => {
   let totalEventAverages = 0;
   let countedEvents = 0;
@@ -980,6 +620,7 @@ const averageSkippedPerActiveOnlineUser = computed(() => {
 
   return Math.ceil(totalEventAverages / countedEvents);
 });
+
 const activeUsersRate = computed(() => {
   let totalRate = 0;
   let countedEvents = 0;
@@ -1010,49 +651,38 @@ const activeUsersRate = computed(() => {
 
   return Math.round((totalRate / countedEvents) * 100);
 });
-const eventAvgMet = computed(() => {
-  const online = selectedEventParticipants.value.filter((p) => p.isOnline);
 
-  const active = online.filter((p) => (p.interactions?.met?.length || 0) > 0);
-
-  if (active.length === 0) return 0;
-
-  const total = active.reduce(
-    (sum, p) => sum + (p.interactions?.met?.length || 0),
-    0
-  );
-
-  return Math.ceil(total / active.length);
+const eventArrivedParticipants = computed(() => {
+  return selectedEventParticipants.value.filter((p) => p.isOnline).length;
 });
 
-const eventAvgSkipped = computed(() => {
-  const online = selectedEventParticipants.value.filter((p) => p.isOnline);
-
-  const active = online.filter(
-    (p) => (p.interactions?.skipped?.length || 0) > 0
-  );
-
-  if (active.length === 0) return 0;
-
-  const total = active.reduce(
-    (sum, p) => sum + (p.interactions?.skipped?.length || 0),
-    0
-  );
-
-  return Math.ceil(total / active.length);
-});
-
-const eventTotalMet = computed(() => {
-  return selectedEventParticipants.value.reduce(
-    (sum, p) => sum + (p.interactions?.met?.length || 0),
-    0
+const eventTotalInteractions = computed(() => {
+  return (
+    eventTotalSaved.value +
+    eventTotalMet.value +
+    eventTotalSkipped.value
   );
 });
 
-const eventTotalSkipped = computed(() => {
-  return selectedEventParticipants.value.reduce(
-    (sum, p) => sum + (p.interactions?.skipped?.length || 0),
-    0
+const eventAvgSavedPerParticipant = computed(() => {
+  if (eventArrivedParticipants.value === 0) return 0;
+  return Math.ceil(eventTotalSaved.value / eventArrivedParticipants.value);
+});
+
+const eventAvgMetPerParticipant = computed(() => {
+  if (eventArrivedParticipants.value === 0) return 0;
+  return Math.ceil(eventTotalMet.value / eventArrivedParticipants.value);
+});
+
+const eventAvgSkippedPerParticipant = computed(() => {
+  if (eventArrivedParticipants.value === 0) return 0;
+  return Math.ceil(eventTotalSkipped.value / eventArrivedParticipants.value);
+});
+
+const eventAvgTotalInteractionsPerParticipant = computed(() => {
+  if (eventArrivedParticipants.value === 0) return 0;
+  return Math.ceil(
+    eventTotalInteractions.value / eventArrivedParticipants.value
   );
 });
 const isLive = ref(true);
@@ -1061,6 +691,7 @@ const livePulse = ref(false);
 let dashboardInterval = null;
 async function refreshDashboardData() {
   await loadEvents();
+  await loadSelectedEventAnalytics();
   lastUpdatedAt.value = new Date();
 
   livePulse.value = true;
@@ -1077,6 +708,26 @@ const formattedLastUpdated = computed(() => {
     second: "2-digit",
   });
 });
+async function loadSelectedEventAnalytics() {
+  if (selectedEventId.value === "all") {
+    selectedEventAnalytics.value = null;
+    selectedEventAnalyticsLoading.value = false;
+    return;
+  }
+
+  try {
+    selectedEventAnalyticsLoading.value = true;
+    selectedEventAnalytics.value = null;
+
+    const data = await getEventAnalyticsApi(selectedEventId.value);
+    selectedEventAnalytics.value = data.analytics || null;
+  } catch (error) {
+    console.error("Load selected event analytics failed:", error);
+    selectedEventAnalytics.value = null;
+  } finally {
+    selectedEventAnalyticsLoading.value = false;
+  }
+}
 onMounted(async () => {
   await refreshDashboardData();
 
@@ -1093,8 +744,178 @@ onUnmounted(() => {
   }
 });
 
+watch(selectedEventId, async () => {
+  await loadSelectedEventAnalytics();
+});
 
 </script>
+
+
+
+<template>
+  <AdminLayout>
+    <div class="dashboard-container">
+      <h1>Dashboard</h1>
+      <p class="dashboard-subtitle">
+        View overall admin statistics or inspect a specific event.
+      </p>
+
+      <div class="top-bar">
+        <select v-model="selectedEventId" class="event-select">
+          <option value="all">All Events</option>
+
+          <option
+            v-for="event in events"
+            :key="event.id"
+            :value="event.id"
+          >
+            {{ event.name }}
+          </option>
+        </select>
+        <button class="export-btn" @click="exportDashboardReport">
+    Export PDF
+  </button>
+  <div class="dashboard-live-row">
+<span class="live-badge" :class="{ offline: !isLive, pulse: livePulse }">
+  {{ isLive ? "● Live updates" : "● Paused" }}
+  </span>
+
+  <span class="last-updated">
+    Last updated: {{ formattedLastUpdated }}
+  </span>
+</div>
+      </div>
+
+<div class="dashboard-content" ref="exportSection">
+    <div v-if="selectedEventId === 'all'" class="dashboard-section">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <p class="kpi-label">Total Participants</p>
+          <h2 class="kpi-value">{{ totalParticipants }}</h2>
+        </div>
+
+        <div class="kpi-card">
+          <p class="kpi-label">Unique Participants</p>
+          <h2 class="kpi-value">{{ uniqueParticipantsCount }}</h2>
+        </div>
+
+        <div class="kpi-card">
+          <p class="kpi-label">Average Per Active Event</p>
+          <h2 class="kpi-value">{{ averageParticipantsPerActiveEvent }}</h2>
+        </div>
+
+        <div class="kpi-card">
+          <p class="kpi-label">Events With Participants</p>
+          <h2 class="kpi-value">{{ eventsWithParticipants }}</h2>
+        </div>
+    <div class="kpi-card">
+      <p class="kpi-sub">Total Events</p>
+
+      <h2 class="kpi-value">{{ totalEvents }}</h2>
+
+      <div class="status-row">
+        <span class="status draft">Draft {{ draftEvents }}</span>
+        <span class="status published">Published {{ publishedEvents }}</span>
+        <span class="status archived">Archived {{ archivedEvents }}</span>
+      </div>
+    </div>
+        <div class="kpi-card circle-kpi-card">
+          <p class="kpi-label">Arrival Rate</p>
+
+          <div
+            class="progress-circle"
+            :style="{
+              background: `conic-gradient(#2f8f5b ${averageOnlineRate}%, #eef2ef 0%)`
+            }"
+          >
+            <div class="progress-circle-inner">
+              {{ averageOnlineRate }}%
+            </div>
+          </div>
+        </div>
+    <div class="kpi-card engagement-card">
+      <p class="kpi-label">Engagement Breakdown</p>
+
+    <div class="engagement-item">
+      <div class="engagement-head">
+        <span>Saved</span>
+        <strong>{{ averageSavedPerActiveOnlineUser }}</strong>
+      </div>
+      <div class="rate-bar">
+        <div
+          class="rate-fill saved"
+          :style="{ width: `${Math.min(averageSavedPerActiveOnlineUser * 20, 100)}%` }"
+        ></div>
+      </div>
+    </div>
+
+    <div class="engagement-item">
+      <div class="engagement-head">
+        <span>Met</span>
+        <strong>{{ averageMetPerActiveOnlineUser }}</strong>
+      </div>
+      <div class="rate-bar">
+        <div
+          class="rate-fill met"
+          :style="{ width: `${Math.min(averageMetPerActiveOnlineUser * 20, 100)}%` }"
+        ></div>
+      </div>
+    </div>
+
+    <div class="engagement-item">
+      <div class="engagement-head">
+        <span>Skipped</span>
+        <strong>{{ averageSkippedPerActiveOnlineUser }}</strong>
+      </div>
+      <div class="rate-bar">
+        <div
+          class="rate-fill skipped"
+          :style="{ width: `${Math.min(averageSkippedPerActiveOnlineUser * 20, 100)}%` }"
+        ></div>
+      </div>
+    </div>
+    </div>
+    <div class="kpi-card">
+      <p class="kpi-label">Active Users</p>
+      <h2 class="kpi-value">{{ activeUsersRate }}%</h2>
+
+      <div class="rate-bar">
+        <div
+          class="rate-fill online"
+          :style="{ width: `${activeUsersRate}%` }"
+        ></div>
+      </div>
+    </div>
+      </div>
+    </div>       
+    <div v-if="selectedEventId !== 'all'" class="dashboard-section">
+  <div class="event-hero-card">
+    <div class="event-hero-text">
+      <p class="event-hero-eyebrow">Event Dashboard</p>
+      <h2 class="event-hero-title">{{ selectedEvent?.name }}</h2>
+      <p class="event-hero-subtitle">Event Analytics Overview</p>
+    </div>
+
+    <span
+      class="event-status-pill"
+      :class="selectedEvent?.status"
+    >
+      {{ selectedEvent?.status }}
+    </span>
+  </div>
+
+  <EventAnalyticsSection
+  :event="selectedEvent"
+  :analytics="selectedEventAnalytics"
+  :loading="selectedEventAnalyticsLoading"  
+  :showHeader="false"
+    />
+</div>
+      </div>
+    </div>
+  </AdminLayout>
+</template>
+
 
 <style scoped>
 .dashboard-container {

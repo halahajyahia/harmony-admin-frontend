@@ -31,6 +31,9 @@ const emit = defineEmits([
   "view-participants",
   "trigger-upload",
   "calculate-matches",
+    "download-original-file",
+    "export-participants",
+
 ]);
 
 const hasFile = computed(() => {
@@ -177,7 +180,14 @@ function handleGenerateClick() {
         </p>
 
         <div v-if="event?.participantsFile" class="file-name-row">
-          <span class="file-name">{{ event.participantsFile.originalName }}</span>
+          <button
+            class="file-name-button"
+            type="button"
+            title="Download original file"
+            @click="$emit('download-original-file')"
+          >
+            {{ event.participantsFile.originalName }}
+          </button>
         </div>
       </div>
 
@@ -238,6 +248,14 @@ function handleGenerateClick() {
         ? "Loading participants..."
         : `View Participants (${participants.length})`
     }}
+  </button>
+
+  <button
+    class="secondary-link-btn"
+    @click="$emit('export-participants')"
+    :disabled="!participants.length || participantsLoading"
+  >
+    Export Participants
   </button>
 </div>
     <div v-if="event?.participantsFile" class="file-sections">
@@ -569,5 +587,21 @@ function handleGenerateClick() {
   display: flex;
   justify-content: center;
   margin-top: -4px;
+}
+
+.file-name-button {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-weight: 700;
+  color: #173524;
+  cursor: pointer;
+  text-align: left;
+}
+
+.file-name-button:hover {
+  text-decoration: underline;
 }
 </style>

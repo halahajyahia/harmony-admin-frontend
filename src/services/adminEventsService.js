@@ -239,4 +239,52 @@ export async function recalculateUpdatedParticipantMatches(eventId, participantI
 
   return data;
 }
+export async function downloadParticipantsOriginalFile(eventId, originalFileName = "participants-file") {
+  const token = await getAdminAccessToken();
 
+  const res = await fetch(
+    `${import.meta.env.VITE_API_BASE_URL}/api/admin/events/${eventId}/participants-file/download`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || "Failed to download original file");
+  }
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = originalFileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  window.URL.revokeObjectURL(url);
+}
+export async function getEventAnalytics(eventId) {
+  const token = await getAdminAccessToken();
+
+  const res = await fetch(
+    `${import.meta.env.VITE_API_BASE_URL}/api/admin/events/${eventId}/analytics`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to load event analytics");
+  }
+
+  return data;
+}

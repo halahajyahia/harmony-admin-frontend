@@ -16,6 +16,8 @@ import {
   recalculateAddedParticipantMatches as recalculateAddedParticipantMatchesApi,
 recalculateUpdatedParticipantMatches as recalculateUpdatedParticipantMatchesApi,
   deleteEventById,
+  downloadParticipantsOriginalFile as downloadParticipantsOriginalFileApi,
+  
 } from "@/services/adminEventsService";
 import AdminLayout from "@/components/admin/AdminLayout.vue";
 import { useRouter } from "vue-router";
@@ -25,7 +27,8 @@ import DeleteParticipantConfirmModal from "@/components/admin/DeleteParticipantC
 import ParticipantsDataFileSection from "@/components/admin/ParticipantsDataFileSection.vue";
 import EventQrModal from "@/components/admin/EventQrModal.vue";  
 import { QrCode } from "lucide-vue-next";
-
+import EventAnalyticsSection from "@/components/admin/EventAnalyticsSection.vue";
+import { getEventAnalytics as getEventAnalyticsApi } from "@/services/adminEventsService";
 const router = useRouter()
 const route = useRoute();
 const eventId = route.params.id;
@@ -110,6 +113,7 @@ const participantToRecalculate = ref(null);
 const isRecalculatingParticipant = ref(false);
 const showQrModal = ref(false);
 const isProcessingParticipantsFile = ref(false);
+const eventAnalytics = ref(null);
 async function deleteEvent() {
   try {
     clearPageNotice();
@@ -277,6 +281,7 @@ function formatFileSize(bytes) {
 onMounted(async () => {
   await loadEvent();
   await loadParticipants();
+  await loadEventAnalytics();
 });
 async function processParticipantsFile() {
   clearPageNotice();
@@ -298,7 +303,7 @@ async function processParticipantsFile() {
 
     event.value = data.event;
     await loadParticipants();
-
+    await loadEventAnalytics();
     previewParticipants.value = (data.previewParticipants || []).slice(0, 8);
     showParticipantsPreview.value = true;
 
@@ -338,6 +343,7 @@ async function deleteParticipantsFile() {
 
     event.value = data.event;
     participants.value = [];
+    await loadEventAnalytics();
     previewParticipants.value = [];
     showParticipantsPreview.value = false;
     selectedParticipantsFile.value = null;
@@ -392,7 +398,7 @@ async function saveParticipantEdit() {
     participants.value = participants.value.map((participant) =>
       participant.id === updatedParticipant.id ? updatedParticipant : participant
     );
-
+await loadEventAnalytics();
     previewParticipants.value = previewParticipants.value.map((participant) =>
       participant.id === updatedParticipant.id ? updatedParticipant : participant
     );
@@ -435,7 +441,7 @@ async function deleteParticipant() {
     participants.value = participants.value.filter(
       (item) => item.id !== participantToDelete.value.id
     );
-
+    await loadEventAnalytics();
     previewParticipants.value = previewParticipants.value.filter(
       (item) => item.id !== participantToDelete.value.id
     );
@@ -485,7 +491,7 @@ async function createParticipant() {
     const createdParticipant = data.participant;
 
     participants.value = [createdParticipant, ...participants.value];
-
+await loadEventAnalytics(); 
     showEditParticipantModal.value = false;
     selectedParticipant.value = null;
 
@@ -643,6 +649,140 @@ async function handleParticipantRecalculation() {
     );
   } finally {
     isRecalculatingParticipant.value = false;
+  }
+}
+async function downloadOriginalParticipantsFile() {
+  try {
+    clearPageNotice();
+
+    if (!event.value?.id || !event.value?.participantsFile?.originalName) {
+      showPageNotice("error", "No original file available");
+      return;
+    }
+
+    await downloadParticipantsOriginalFileApi(
+      event.value.id,
+      event.value.participantsFile.originalName
+    );
+  } catch (error) {
+    console.error(error);
+    showPageNotice("error", error.message || "Failed to download original file");
+  }
+}
+function normalizeExportValue(value) {
+  if (value == null) return "";
+
+  return String(value)
+    .replace(/\r\n/g, " | ")
+    .replace(/\n/g, " | ")
+    .replace(/\r/g, " | ")
+    .trim();
+}
+function escapeCsvValue(value) {
+  const stringValue = normalizeExportValue(value);
+
+  if (
+    stringValue.includes(",") ||
+    stringValue.includes('"') ||
+    stringValue.includes("\n")
+  ) {
+    return `"${stringValue.replace(/"/g, '""')}"`;
+  }
+
+  return stringValue;
+}
+
+function exportParticipantsToCsv() {
+  try {
+    clearPageNotice();
+
+    if (!participants.value.length) {
+      showPageNotice("error", "No participants available to export");
+      return;
+    }
+
+    const headers = [
+  "Name",
+  "Phone Number",
+  "Job Title",
+  "Status",
+  "Is Online",
+  "Source",
+  "I Want To Meet",
+  "Academic Resume",
+  "Professional Resume",
+  "Personal Resume",
+  "Photo URL",
+  "Row Number",
+  "Created At",
+  "Updated At",
+];
+
+    const rows = participants.value.map((participant) => [
+  participant.name || "",
+  participant.phoneNumber ? `="${participant.phoneNumber}"` : "",
+  participant.jobTitle || "",
+  participant.status === "pending" ? "Pending" : participant.status || "",
+  participant.isOnline ? "Yes" : "No",
+  participant.source === "manual" ? "Manual" : "File",
+  participant.iWantToMeet || "",
+  participant.academicResume || "",
+  participant.professionalResume || "",
+  participant.personalResume || "",
+  participant.photoUrl || "",
+  participant.rowNumber ?? "",
+  participant.createdAt || "",
+  participant.updatedAt || "",
+]);
+
+    const csvContent = [
+      headers.map(escapeCsvValue).join(","),
+      ...rows.map((row) => row.map(escapeCsvValue).join(",")),
+    ].join("\n");
+
+    const BOM = "\uFEFF";
+
+    const blob = new Blob([BOM + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    const safeEventName = (event.value?.name || "event")
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "_");
+
+    a.href = url;
+    const today = new Date().toISOString().slice(0, 10);
+    a.download = `${safeEventName}_participants_${today}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    window.URL.revokeObjectURL(url);
+
+    showPageNotice("success", "Participants exported successfully");
+  } catch (error) {
+    console.error("Export participants failed:", error);
+    showPageNotice("error", "Failed to export participants");
+  }
+}
+
+const eventAnalyticsLoading = ref(true); // 👈
+
+async function loadEventAnalytics() {
+  try {
+    eventAnalyticsLoading.value = true;
+    eventAnalytics.value = null;
+
+    const data = await getEventAnalyticsApi(eventId);
+    eventAnalytics.value = data.analytics || null;
+  } catch (error) {
+    console.error("Load event analytics failed:", error);
+    eventAnalytics.value = null;
+  } finally {
+    eventAnalyticsLoading.value = false;
   }
 }
 </script>
@@ -846,11 +986,15 @@ async function handleParticipantRecalculation() {
   @trigger-upload="triggerParticipantsFileUpload"
   :matchingLoading="isCalculatingMatches"
   @calculate-matches="calculateMatchesForEvent"
+  @download-original-file="downloadOriginalParticipantsFile"
+  @export-participants="exportParticipantsToCsv"
 />
-        <section class="event-secondary-card">
-          <h3>Event Analytics</h3>
-          <p>Analytics, reports, and additional event tools will appear here later.</p>
-        </section>
+<EventAnalyticsSection
+  :event="event"
+  :analytics="eventAnalytics"
+  :loading="eventAnalyticsLoading" 
+  :showHeader="true"
+/>
         <input
           ref="participantsFileInput"
           type="file"
