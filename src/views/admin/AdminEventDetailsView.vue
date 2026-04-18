@@ -589,7 +589,7 @@ async function calculateMatchesForEvent() {
 
     event.value = {
       ...event.value,
-      matchingStatus: "completed",
+      matchingStatus: "processing matches",
     };
 
     showPageNotice("success", "Matches calculated successfully");
@@ -598,7 +598,7 @@ async function calculateMatchesForEvent() {
 
     event.value = {
       ...event.value,
-      matchingStatus: "pending",
+      matchingStatus: "failed",
     };
 
     showPageNotice("error", error.message || "Failed to calculate matches");
