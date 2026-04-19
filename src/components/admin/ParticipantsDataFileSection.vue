@@ -65,6 +65,7 @@ const matchingStatusLabel = computed(() => {
   const status = props.event?.matchingStatus || "pending";
 
   if (status === "processing") return "Processing";
+  if (status === "generating matches") return "generating matches";
   if (status === "completed") return "Completed";
   if (status === "failed") return "Failed";
   return "Pending";

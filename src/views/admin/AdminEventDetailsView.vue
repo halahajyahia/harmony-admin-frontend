@@ -580,6 +580,7 @@ async function calculateMatchesForEvent() {
     clearPageNotice();
     isCalculatingMatches.value = true;
 
+    // מיד עם הלחיצה
     event.value = {
       ...event.value,
       matchingStatus: "processing",
@@ -587,12 +588,13 @@ async function calculateMatchesForEvent() {
 
     await calculateMatchesForEventApi(event.value.id);
 
+    // מיד אחרי שהרוט חזר
     event.value = {
       ...event.value,
-      matchingStatus: "processing matches",
+      matchingStatus: "generating matches",
     };
 
-    showPageNotice("success", "Matches calculated successfully");
+    showPageNotice("success", "Match generation started successfully");
   } catch (error) {
     console.error(error);
 
@@ -601,7 +603,7 @@ async function calculateMatchesForEvent() {
       matchingStatus: "failed",
     };
 
-    showPageNotice("error", error.message || "Failed to calculate matches");
+    showPageNotice("error", error.message || "Failed to start match generation");
   } finally {
     isCalculatingMatches.value = false;
   }
