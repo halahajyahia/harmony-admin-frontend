@@ -716,14 +716,20 @@ async function loadSelectedEventAnalytics() {
   }
 
   try {
-    selectedEventAnalyticsLoading.value = true;
-    selectedEventAnalytics.value = null;
+    // loading מלא רק אם עדיין אין נתונים
+    if (!selectedEventAnalytics.value) {
+      selectedEventAnalyticsLoading.value = true;
+    }
 
     const data = await getEventAnalyticsApi(selectedEventId.value);
     selectedEventAnalytics.value = data.analytics || null;
   } catch (error) {
     console.error("Load selected event analytics failed:", error);
-    selectedEventAnalytics.value = null;
+
+    // רק אם אין בכלל נתונים, נאפס
+    if (!selectedEventAnalytics.value) {
+      selectedEventAnalytics.value = null;
+    }
   } finally {
     selectedEventAnalyticsLoading.value = false;
   }
