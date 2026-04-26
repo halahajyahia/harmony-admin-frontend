@@ -1,6 +1,6 @@
 <script setup>
 
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import { useRoute } from "vue-router";
 import {
   getEventById,
@@ -114,6 +114,7 @@ const isRecalculatingParticipant = ref(false);
 const showQrModal = ref(false);
 const isProcessingParticipantsFile = ref(false);
 const eventAnalytics = ref(null);
+let eventRefreshInterval = null;
 async function deleteEvent() {
   try {
     clearPageNotice();
@@ -283,6 +284,17 @@ onMounted(async () => {
   await loadParticipants();
   await loadEventAnalytics();
 });
+eventRefreshInterval = setInterval(async () => {
+  try {
+    const data = await getEventById(eventId);
+
+    if (event.value) {
+      event.value.matchingStatus = data.matchingStatus;
+    }
+  } catch (error) {
+    console.error("Polling failed:", error);
+  }
+}, 5000);
 async function processParticipantsFile() {
   clearPageNotice();
 
@@ -787,6 +799,11 @@ async function loadEventAnalytics() {
     eventAnalyticsLoading.value = false;
   }
 }
+onUnmounted(() => {
+  if (eventRefreshInterval) {
+    clearInterval(eventRefreshInterval);
+  }
+});
 </script>
 
 <template>
