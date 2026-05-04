@@ -116,7 +116,7 @@ const viewState = computed(() => {
 
 const generateState = computed(() => {
   if (!hasParticipants.value) return "disabled";
-  if (props.matchingLoading || props.event?.matchingStatus === "processing") {
+  if (props.matchingLoading || props.event?.matchingStatus === "processing"||props.event?.matchingStatus === "generating matches") {
     return "loading";
   }
   if (isMatchingCompleted.value) return "completed";
